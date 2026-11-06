@@ -1,0 +1,15 @@
+1- npm init -y 
+2- npm install express
+3- npm install nodemon --save-dev  for auto restart server when file change 
+4- npm install sequelize pg pg-hstore dotenv for integrate ORM with sequalize 
+5- npm install sequelize sequelize-cli pg pg-hstore
+6- npx sequelize-cli init
+7- npx sequelize-cli model:generate --name User –attributes firstName:string,lastName:string,email:string
+8- npx sequelize-cli db:migrate
+9- npx sequelize-cli db:migrate:undo  for If undo migration (rollback)
+10- npm install useragent used to install a JavaScript package called useragent into your Node.js project
+11- npm install cors for secure middleware login 
+12- npm install uuid for create unique id
+13- npm install swagger-ui-express for create api documentation
+14- npm install bcrypt jsonwebtoken
+
