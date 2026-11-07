@@ -1,6 +1,7 @@
 const multer=require("multer");
 const path=require("path");
 const fs=require("fs");
+const { uploadToCloudinary, isConfigured } = require("../utils/cloudinary");
 
 // files are saved to src/storage/products and served at /uploads/products/<file>
 const UPLOAD_DIR=path.join(__dirname,"..","storage","products");
@@ -29,7 +30,7 @@ const uploadProductImage=multer({
 
 // wraps multer so its errors become 400 JSON instead of crashing the request
 const handleUpload=(req,res,next)=>{
-    uploadProductImage(req,res,(err)=>{
+    uploadProductImage(req,res,async (err)=>{
         if(err instanceof multer.MulterError){
             if(err.code==="LIMIT_FILE_SIZE"){
                 return res.status(400).json({message:"Image must be 5MB or smaller"});
@@ -38,6 +39,16 @@ const handleUpload=(req,res,next)=>{
         }
         if(err){
             return res.status(400).json({message:err.message});
+        }
+        if(req.file && isConfigured){
+            try{
+                const cloudUrl = await uploadToCloudinary(req.file.path, "ecommerce/products");
+                if(cloudUrl){
+                    req.file.cloudinaryUrl = cloudUrl;
+                }
+            } catch(uploadErr){
+                console.error("Cloudinary upload failed, falling back to local:", uploadErr.message);
+            }
         }
         next();
     });

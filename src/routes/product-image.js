@@ -5,7 +5,7 @@ const {handleUpload,deleteUploadedFile}=require("../middleware/upload");
 
 // multipart sends booleans as strings
 const toBool=(v)=>v===true || v==="true" || v==="1" || v==="yes";
-const fileUrl=(file)=>`/uploads/products/${file.filename}`;
+const fileUrl=(file)=>file.cloudinaryUrl || `/uploads/products/${file.filename}`;
 
 // mergeParams so :productId from the parent mount is available
 const router=express.Router({mergeParams:true});

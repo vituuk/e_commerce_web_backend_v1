@@ -11,12 +11,12 @@ router.get("/profile",authenticate,profileController.getMine);
 router.post("/profile",authenticate,profileController.create);
 // PUT /auth/profile : update own existing profile (send only fields to change)
 router.put("/profile",authenticate,profileController.update);
-// POST /auth/profile/avatar : upload avatar image file and return its /uploads/... URL
+// POST /auth/profile/avatar : upload avatar image file and return its URL
 router.post("/profile/avatar",authenticate,handleUpload,(req,res)=>{
     if(!req.file){
         return res.status(400).json({message:"image file is required (form field 'image')"});
     }
-    const url=`/uploads/products/${req.file.filename}`;
+    const url=req.file.cloudinaryUrl || `/uploads/products/${req.file.filename}`;
     return res.status(201).json({message:"Avatar uploaded",data:{url}});
 });
 // Admin: view, create, update, or delete any user's profile
