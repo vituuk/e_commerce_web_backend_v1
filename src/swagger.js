@@ -7,7 +7,10 @@ module.exports = {
     version: "1.0.0",
     description: "API documentation for testing the admin service",
   },
-  servers: [{ url: `http://localhost:${PORT}` }],
+  servers: [
+    { url: "/", description: "Current Server (Auto)" },
+    { url: `http://localhost:${PORT}`, description: "Localhost" },
+  ],
   paths: {
     "/testing": {
       get: {
