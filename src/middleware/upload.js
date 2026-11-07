@@ -40,14 +40,22 @@ const handleUpload=(req,res,next)=>{
         if(err){
             return res.status(400).json({message:err.message});
         }
-        if(req.file && isConfigured){
-            try{
-                const cloudUrl = await uploadToCloudinary(req.file.path, "ecommerce/products");
-                if(cloudUrl){
-                    req.file.cloudinaryUrl = cloudUrl;
+        if(req.file){
+            console.log("📁 File received by upload middleware:", req.file.path);
+            const { uploadToCloudinary, isConfigured } = require("../utils/cloudinary");
+            console.log("☁️ Is Cloudinary configured?", isConfigured);
+            if(isConfigured){
+                try{
+                    const cloudUrl = await uploadToCloudinary(req.file.path, "ecommerce/products");
+                    if(cloudUrl){
+                        req.file.cloudinaryUrl = cloudUrl;
+                        console.log("🎉 Successfully assigned cloudinaryUrl:", cloudUrl);
+                    }
+                } catch(uploadErr){
+                    console.error("❌ Cloudinary upload failed, falling back to local:", uploadErr.message);
                 }
-            } catch(uploadErr){
-                console.error("Cloudinary upload failed, falling back to local:", uploadErr.message);
+            } else {
+                console.warn("⚠️ Cloudinary not configured! Saved locally to /uploads/products/");
             }
         }
         next();
