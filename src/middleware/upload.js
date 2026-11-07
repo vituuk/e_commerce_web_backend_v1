@@ -46,7 +46,7 @@ const handleUpload=(req,res,next)=>{
             console.log("☁️ Is Cloudinary configured?", isConfigured);
             if(isConfigured){
                 try{
-                    const cloudUrl = await uploadToCloudinary(req.file.path, "ecommerce/products");
+                    const cloudUrl = await uploadToCloudinary(req.file.path, "e-commerce-products");
                     if(cloudUrl){
                         req.file.cloudinaryUrl = cloudUrl;
                         console.log("🎉 Successfully assigned cloudinaryUrl:", cloudUrl);

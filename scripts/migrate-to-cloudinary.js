@@ -35,7 +35,7 @@ async function migrate() {
     if (fs.existsSync(localFilePath)) {
       try {
         console.log(`Uploading [${img.id}]: ${filename}...`);
-        const cloudUrl = await uploadToCloudinary(localFilePath, "ecommerce/products");
+        const cloudUrl = await uploadToCloudinary(localFilePath, "e-commerce-products");
         if (cloudUrl) {
           img.url = cloudUrl;
           await img.save();

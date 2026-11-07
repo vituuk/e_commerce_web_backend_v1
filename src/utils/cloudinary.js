@@ -18,7 +18,7 @@ function getCloudinaryConfig() {
  * @param {string} folder - Target folder in Cloudinary
  * @returns {Promise<string|null>} - Returns secure_url or null if not configured
  */
-async function uploadToCloudinary(filePath, folder = "ecommerce/products") {
+async function uploadToCloudinary(filePath, folder = "e-commerce-products") {
   const { configured, cloud_name } = getCloudinaryConfig();
   if (!configured) {
     console.warn("⚠️ [CLOUDINARY] Missing credentials in environment variables!");
