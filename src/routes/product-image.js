@@ -11,15 +11,25 @@ const upload = multer({
 });
 
 // Accepts multipart key "file" (Postman) or "image" (Admin Dashboard) and populates req.file
+const formatUploadError = (err) => {
+  const raw = err?.error?.message || err?.message || String(err || "Unknown error");
+  if (err?.http_code === 403 || String(raw).includes("403")) {
+    return "Cloudinary rejected upload with 403 Forbidden: your API Key is missing 'create' (Upload) permission. In Cloudinary Console -> Settings -> API Keys, use your Root API Key or enable Upload/Create permissions, then update CLOUD_NAME / CLOUDINARY_KEY / CLOUDINARY_SECRET in .env and Render.";
+  }
+  return `Failed to upload image to Cloudinary: ${raw}`;
+};
+
 const uploadFile = (req, res, next) => {
   upload.fields([
     { name: "file", maxCount: 1 },
     { name: "image", maxCount: 1 },
   ])(req, res, (err) => {
     if (err) {
-      return res.status(400).json({
-        message: "Failed to upload image to Cloudinary",
-        error: err.message || String(err),
+      const detailedMsg = formatUploadError(err);
+      console.error("❌ Cloudinary upload error:", err);
+      return res.status(err?.http_code === 403 ? 502 : 400).json({
+        message: detailedMsg,
+        error: err?.message || String(err),
       });
     }
     if (!req.file && req.files) {

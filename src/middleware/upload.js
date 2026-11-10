@@ -24,9 +24,14 @@ const handleUpload = (req, res, next) => {
       return res.status(400).json({ message: err.message });
     }
     if (err) {
-      return res.status(400).json({
-        message: "Failed to upload file",
-        error: err.message || String(err),
+      const raw = err?.error?.message || err?.message || String(err);
+      const message =
+        err?.http_code === 403 || String(raw).includes("403")
+          ? "Cloudinary rejected upload with 403 Forbidden: API Key is missing 'create' (Upload) permission."
+          : `Failed to upload file: ${raw}`;
+      return res.status(err?.http_code === 403 ? 502 : 400).json({
+        message,
+        error: raw,
       });
     }
     if (!req.file && req.files) {
