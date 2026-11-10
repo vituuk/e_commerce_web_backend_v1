@@ -1,72 +1,59 @@
-const multer=require("multer");
-const path=require("path");
-const fs=require("fs");
-const { uploadToCloudinary, isConfigured } = require("../utils/cloudinary");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+const { storage, cloudinary } = require("../storage/storage");
 
-// files are saved to src/storage/products and served at /uploads/products/<file>
-const UPLOAD_DIR=path.join(__dirname,"..","storage","products");
-fs.mkdirSync(UPLOAD_DIR,{recursive:true});
+const UPLOAD_DIR = path.join(__dirname, "..", "storage", "products");
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
-const ALLOWED=["image/jpeg","image/png","image/webp","image/gif"];
-
-const storage=multer.diskStorage({
-    destination:(req,file,cb)=>cb(null,UPLOAD_DIR),
-    filename:(req,file,cb)=>{
-        const ext=path.extname(file.originalname).toLowerCase();
-        cb(null,`product-${Date.now()}-${Math.round(Math.random()*1e9)}${ext}`);
-    }
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
-const uploadProductImage=multer({
-    storage,
-    limits:{fileSize:5*1024*1024}, // 5MB
-    fileFilter:(req,file,cb)=>{
-        if(!ALLOWED.includes(file.mimetype)){
-            return cb(new multer.MulterError("LIMIT_UNEXPECTED_FILE","image"));
-        }
-        cb(null,true);
+// Accepts multipart key "file" or "image" and populates req.file from CloudinaryStorage
+const handleUpload = (req, res, next) => {
+  upload.fields([
+    { name: "file", maxCount: 1 },
+    { name: "image", maxCount: 1 },
+  ])(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === "LIMIT_FILE_SIZE") {
+        return res.status(400).json({ message: "File must be 10MB or smaller" });
+      }
+      return res.status(400).json({ message: err.message });
     }
-}).single("image");
-
-// wraps multer so its errors become 400 JSON instead of crashing the request
-const handleUpload=(req,res,next)=>{
-    uploadProductImage(req,res,async (err)=>{
-        if(err instanceof multer.MulterError){
-            if(err.code==="LIMIT_FILE_SIZE"){
-                return res.status(400).json({message:"Image must be 5MB or smaller"});
-            }
-            return res.status(400).json({message:"Field 'image' must be a jpeg, png, webp or gif file"});
-        }
-        if(err){
-            return res.status(400).json({message:err.message});
-        }
-        if(req.file){
-            console.log("📁 File received by upload middleware:", req.file.path);
-            const { uploadToCloudinary, isConfigured } = require("../utils/cloudinary");
-            console.log("☁️ Is Cloudinary configured?", isConfigured);
-            if(isConfigured){
-                try{
-                    const cloudUrl = await uploadToCloudinary(req.file.path, "e-commerce-products");
-                    if(cloudUrl){
-                        req.file.cloudinaryUrl = cloudUrl;
-                        console.log("🎉 Successfully assigned cloudinaryUrl:", cloudUrl);
-                    }
-                } catch(uploadErr){
-                    console.error("❌ Cloudinary upload failed, falling back to local:", uploadErr.message);
-                }
-            } else {
-                console.warn("⚠️ Cloudinary not configured! Saved locally to /uploads/products/");
-            }
-        }
-        next();
-    });
+    if (err) {
+      return res.status(400).json({
+        message: "Failed to upload file",
+        error: err.message || String(err),
+      });
+    }
+    if (!req.file && req.files) {
+      req.file = req.files.file?.[0] || req.files.image?.[0] || undefined;
+    }
+    if (req.file && req.file.path) {
+      req.file.cloudinaryUrl = req.file.path;
+    }
+    next();
+  });
 };
 
-// "/uploads/products/x.png" -> absolute path on disk
-const deleteUploadedFile=(url)=>{
-    if(!url || !url.startsWith("/uploads/products/")) return;
-    const file=path.join(UPLOAD_DIR,path.basename(url));
-    fs.unlink(file,()=>{}); // ignore if already missing
+const deleteUploadedFile = async (urlOrPublicId) => {
+  if (!urlOrPublicId) return;
+  if (urlOrPublicId.startsWith("/uploads/products/")) {
+    const file = path.join(UPLOAD_DIR, path.basename(urlOrPublicId));
+    fs.unlink(file, () => {});
+    return;
+  }
+  if (!urlOrPublicId.startsWith("http://") && !urlOrPublicId.startsWith("https://")) {
+    await cloudinary.uploader.destroy(urlOrPublicId).catch(() => {});
+  }
 };
 
-module.exports={handleUpload,deleteUploadedFile,UPLOAD_DIR};
+module.exports = {
+  upload,
+  handleUpload,
+  deleteUploadedFile,
+  UPLOAD_DIR,
+};

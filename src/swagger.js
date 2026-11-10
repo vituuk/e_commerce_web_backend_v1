@@ -210,6 +210,46 @@ module.exports = {
       },
     },
     // ================= PRODUCT IMAGE =================
+    "/product/{id}/upload": {
+      parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" }, example: 1 }],
+      post: {
+        tags: ["Product Image"],
+        summary: "Upload file to Cloudinary folder 'e-commerce-web-v1' (admin token required; form key 'file')",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: { "multipart/form-data": { schema: { $ref: "#/components/schemas/ProductImageUpload" } } },
+        },
+        responses: {
+          201: { description: "Upload image successfully" },
+          400: { description: "No file uploaded" },
+          404: { description: "Product not found" },
+        },
+      },
+    },
+    "/product/images/{imageId}/download": {
+      parameters: [{ name: "imageId", in: "path", required: true, schema: { type: "integer" }, example: 1 }],
+      get: {
+        tags: ["Product Image"],
+        summary: "Download / redirect to Cloudinary file with fl_attachment (public)",
+        responses: {
+          302: { description: "Redirects to Cloudinary download URL" },
+          404: { description: "Product image not found" },
+        },
+      },
+    },
+    "/product/images/{imageId}": {
+      parameters: [{ name: "imageId", in: "path", required: true, schema: { type: "integer" }, example: 1 }],
+      delete: {
+        tags: ["Product Image"],
+        summary: "Delete file from Cloudinary & database (admin token required)",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: "Image deleted successfully" },
+          404: { description: "Image not found" },
+        },
+      },
+    },
     "/product/{productId}/images": {
       parameters: [{ name: "productId", in: "path", required: true, schema: { type: "integer" }, example: 1 }],
       get: {
@@ -1424,9 +1464,9 @@ module.exports = {
       },
       ProductImageUpload: {
         type: "object",
-        required: ["image"],
+        required: ["file"],
         properties: {
-          image: { type: "string", format: "binary", description: "jpeg/png/webp/gif, max 5MB" },
+          file: { type: "string", format: "binary", description: "File uploaded directly to Cloudinary folder e-commerce-web-v1" },
           is_primary: { type: "boolean", example: false },
         },
       },
@@ -1434,8 +1474,8 @@ module.exports = {
         type: "object",
         properties: {
           productId: { type: "integer", example: 2, description: "Optional target product ID to move this image to another product" },
-          image: { type: "string", format: "binary", description: "Optional new file, replaces the old one" },
-          url: { type: "string", example: "/uploads/products/product-1760514000000-123456789.png", description: "Optional direct image URL when not uploading a new file" },
+          file: { type: "string", format: "binary", description: "Optional new file uploaded to Cloudinary folder e-commerce-web-v1" },
+          url: { type: "string", example: "https://res.cloudinary.com/dkjdboxve/image/upload/v1/e-commerce-web-v1/sample.jpg", description: "Optional direct image URL when not uploading a new file" },
           is_primary: { type: "boolean", example: false },
         },
       },
@@ -1444,7 +1484,10 @@ module.exports = {
         properties: {
           id: { type: "integer", example: 1 },
           productId: { type: "integer", example: 1 },
-          url: { type: "string", example: "/uploads/products/product-1760514000000-123456789.png", description: "Open at http://localhost:3000 + url" },
+          url: { type: "string", example: "https://res.cloudinary.com/dkjdboxve/image/upload/v1/e-commerce-web-v1/sample.jpg" },
+          imageUrl: { type: "string", example: "https://res.cloudinary.com/dkjdboxve/image/upload/v1/e-commerce-web-v1/sample.jpg" },
+          fileName: { type: "string", example: "sample.jpg" },
+          publicId: { type: "string", example: "e-commerce-web-v1/sample" },
           is_primary: { type: "boolean", example: true },
           createdAt: { type: "string", format: "date-time" },
           updatedAt: { type: "string", format: "date-time" },
